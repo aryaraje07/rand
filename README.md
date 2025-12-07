@@ -1,6 +1,5 @@
-# rand
 
-PS01_TicTacToe.java (stand-alone, robust, input-checked)
+   PS01_TicTacToe.java (stand-alone, robust, input-checked)
 import java.util.*;
 
 /** PS01: Non-AI two-player TicTacToe (no shared code, robust I/O, validation). */
