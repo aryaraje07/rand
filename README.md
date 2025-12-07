@@ -1832,3 +1832,278 @@ javac PS18_EightPuzzle_BestFirst.java && java PS18_EightPuzzle_BestFirst 1 2 3 4
 
 # A* M&C for n=3
 javac PS26_MissionariesCannibals_AStar.java && java PS26_MissionariesCannibals_AStar 3
+
+
+
+
+PS32 – Predicate Family Tree
+
+ps32_family_tree.pl
+
+% Basic family predicates with derived relations.
+
+male(john).
+female(mary).
+female(alice).
+male(bob).
+
+parent(john, alice).
+parent(mary, alice).
+parent(john, bob).
+parent(mary, bob).
+
+father(F,C) :- male(F), parent(F,C).
+mother(M,C) :- female(M), parent(M,C).
+
+grandparent(GP, GC) :- parent(GP, P), parent(P, GC).
+
+sibling(X,Y) :-
+    X \= Y,
+    parent(P, X), parent(P, Y).
+
+ancestor(A, D) :- parent(A, D).
+ancestor(A, D) :- parent(A, X), ancestor(X, D).
+
+/*
+Queries:
+?- father(john, alice).
+?- mother(mary, bob).
+?- grandparent(GP, alice).
+?- sibling(alice, bob).
+?- ancestor(john, alice).
+*/
+
+PS33 – Predicate Bird Classification
+
+ps33_bird_classification.pl
+
+% classify_bird(+Swims,+Flies,+LongLegs, -Species)
+
+classify_bird(true,  false, _    , penguin).
+classify_bird(true,  true,  _    , duck).
+classify_bird(false, true,  true , stork).
+classify_bird(false, true,  false, sparrow).
+classify_bird(false, false, _    , flightless_unknown).
+
+/*
+Queries:
+?- classify_bird(true,false,false,S).
+S = penguin.
+
+?- classify_bird(false,true,true,S).
+S = stork.
+*/
+
+PS34 – Predicate Vehicle Classification
+
+ps34_vehicle_classification.pl
+
+% classify_vehicle(+Wheels, +Motor(boolean), -Type)
+
+classify_vehicle(2, true,  motorcycle).
+classify_vehicle(3, true,  auto_rickshaw).
+classify_vehicle(4, true,  car).
+classify_vehicle(4, false, cart).
+classify_vehicle(W, false, bicycle) :- W =:= 2.
+classify_vehicle(_, _, unknown).
+
+/*
+Queries:
+?- classify_vehicle(2, true, T).
+T = motorcycle.
+
+?- classify_vehicle(4, false, T).
+T = cart.
+*/
+
+PS35 – Predicate Veg/Fruit Classification
+
+ps35_veg_fruit.pl
+
+% classify_plant(+HasSeeds, +Sweet, -Type)
+
+classify_plant(true,  true,  fruit).
+classify_plant(false, false, vegetable).
+classify_plant(true,  false, culinary_fruit_or_seeded_veg).
+classify_plant(false, true,  processed_or_unknown).
+
+/*
+Queries:
+?- classify_plant(true,true,T).
+T = fruit.
+*/
+
+PS36 – Expert: Skillset → Job Role (forward-style reasoning)
+
+ps36_skillset_job.pl
+
+% Encode facts as a list of atoms (skills). infer_roles(+Skills, -AllFacts).
+% Rules: IF java & sql THEN backend_dev. IF ml & python THEN data_scientist.
+
+rule([java, sql], backend_dev).
+rule([ml, python], data_scientist).
+rule([frontend, react], frontend_dev).
+rule([cloud, kubernetes], devops_engineer).
+
+infer_roles(Skills, Inferred) :-
+    sort(Skills, Base),         % normalize input
+    closure(Base, Inferred).
+
+closure(Facts, Out) :-
+    ( apply_one_rule(Facts, NewAtom),
+      \+ memberchk(NewAtom, Facts)
+    -> closure([NewAtom|Facts], Out)
+    ;  sort(Facts, Out)
+    ).
+
+apply_one_rule(Facts, Head) :-
+    rule(Body, Head),
+    forall(member(B, Body), memberchk(B, Facts)).
+
+/*
+Queries:
+?- infer_roles([java,sql,ml,python], All).
+All = [backend_dev, data_scientist, java, ml, python, sql].
+
+?- infer_roles([cloud,kubernetes,react], All).
+All = [cloud, devops_engineer, kubernetes, react].
+*/
+
+PS37 – Expert: Animal Identification
+
+ps37_animal_ident.pl
+
+% Very small rule base. infer_animal(+FactsList, -AllFacts).
+
+% Rules:
+rule([mammal, stripes, carnivore], tiger).
+rule([mammal, long_neck]         , giraffe).
+rule([bird, swims, not_flies]    , penguin).
+rule([bird, flies, raptor]       , eagle).
+
+infer_animal(Facts0, FactsOut) :-
+    sort(Facts0, Base),
+    closure(Base, FactsOut).
+
+closure(F, Out) :-
+    ( rule(Body, Head),
+      subset_list(Body, F),
+      \+ memberchk(Head, F)
+    -> closure([Head|F], Out)
+    ;  sort(F, Out)
+    ).
+
+subset_list([], _).
+subset_list([H|T], set) :- !, false.  % guard if someone passes atom 'set'
+subset_list([H|T], L) :- memberchk(H, L), subset_list(T, L).
+
+/*
+Queries:
+?- infer_animal([mammal,stripes,carnivore], F).
+F = [carnivore, mammal, stripes, tiger].
+
+?- infer_animal([bird,swims,not_flies], F).
+F = [bird, not_flies, penguin, swims].
+*/
+
+PS38 – Expert: Family Tree (facts + derived)
+
+ps38_expert_family.pl
+
+% Facts
+male(john).
+female(mary).
+female(alice).
+
+parent(john, alice).
+parent(mary, alice).
+
+% Derived "expert" rules
+father(F,C) :- male(F), parent(F,C).
+mother(M,C) :- female(M), parent(M,C).
+child(C,P)  :- parent(P,C).
+
+explain_father(C, F, proof(father(F,C), [male(F), parent(F,C)])) :-
+    father(F,C).
+
+explain_mother(C, M, proof(mother(M,C), [female(M), parent(M,C)])) :-
+    mother(M,C).
+
+/*
+Queries:
+?- father(F, alice).
+F = john.
+
+?- explain_father(alice, F, Proof).
+F = john,
+Proof = proof(father(john, alice), [male(john), parent(john, alice)]).
+*/
+
+PS39 – Expert: Disease Classification from Symptoms
+
+ps39_disease_rules.pl
+
+% infer_diseases(+SymptomsList, -AllFactsIncludingDiseases)
+
+rule([fever, cough], flu).
+rule([fever, rash] , measles).
+rule([headache, nausea], migraine).
+
+infer_diseases(Symptoms, Out) :-
+    sort(Symptoms, Base),
+    closure(Base, Out).
+
+closure(F, Out) :-
+    ( rule(Body, Head),
+      subset_list(Body, F),
+      \+ memberchk(Head, F)
+    -> closure([Head|F], Out)
+    ;  sort(F, Out)
+    ).
+
+subset_list([], _).
+subset_list([H|T], L) :- memberchk(H, L), subset_list(T, L).
+
+/*
+Queries:
+?- infer_diseases([fever,cough,fatigue], F).
+F = [cough, fatigue, fever, flu].
+
+?- infer_diseases([headache,nausea], F).
+F = [headache, migraine, nausea].
+*/
+
+PS40 – Expert: Toy Sentiment Analysis
+
+ps40_sentiment.pl
+
+% classify_sentiment(+Tokens:list(atom), -Labels:list(atom))
+% Labels include 'positive' and/or 'negative' if matched.
+
+positive_word(love).
+positive_word(excellent).
+positive_word(good).
+positive_word(amazing).
+
+negative_word(poor).
+negative_word(bad).
+negative_word(terrible).
+negative_word(horrible).
+
+classify_sentiment(Tokens, Labels) :-
+    (exists_positive(Tokens) -> P= [positive] ; P=[]),
+    (exists_negative(Tokens) -> N= [negative] ; N=[]),
+    append(P, N, Labels).
+
+exists_positive(Toks) :- member(W,Toks), positive_word(W), !.
+exists_negative(Toks) :- member(W,Toks), negative_word(W), !.
+
+/*
+Queries:
+?- classify_sentiment([i,love,this,phone,but,battery,life,is,poor], L).
+L = [positive, negative].
+
+?- classify_sentiment([service,was,excellent], L).
+L = [positive].
+*/
+
