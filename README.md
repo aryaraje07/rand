@@ -1,3 +1,313 @@
+TictacToe Non AI
+
+import java.util.*;
+
+public class TicTacToe {
+    static int turn = 0;
+    static int[] board = new int[9]; // 2 = blank, 3 = X, 5 = O
+    static Scanner sc = new Scanner(System.in);
+
+    static void initBoard()
+     {
+        Arrays.fill(board, 2);
+    }
+
+    static void display() {
+        System.out.println("\nBoard:");
+        for (int i = 0; i < 9; i++) {
+            if (board[i] == 3)
+                System.out.print("X ");
+            else if (board[i] == 5)
+                System.out.print("O ");
+            else
+                System.out.print("B ");
+
+            if ((i + 1) % 3 == 0)
+                System.out.println();
+        }
+        System.out.println();
+    }
+
+    static void go(int x) {
+        if (x < 0 || x > 8 || board[x] != 2) return;
+        if (turn % 2 == 0)
+            board[x] = 3; 
+        else
+            board[x] = 5; 
+        turn++;
+    }
+
+    static int make2() {
+        if (board[4] == 2)
+            return 4;
+        for (int i = 1; i <= 7; i += 2) {
+            if (board[i] == 2)
+                return i;
+        }
+        return -1;
+    }
+
+    static int poswin(int n) {
+        int[][] w = {
+            {0, 1, 2}, {0, 3, 6}, {0, 4, 8}, {1, 4, 7},
+            {2, 5, 8}, {2, 4, 6}, {3, 4, 5}, {6, 7, 8}
+        };
+        for (int[] line : w) {
+            int prod = board[line[0]] * board[line[1]] * board[line[2]];
+            int target = (n == 3) ? 18 : 50;
+            if (prod == target) {
+                for (int pos : line) {
+                    if (board[pos] == 2)
+                        return pos;
+                }
+            }
+        }
+        return -1;
+    }
+
+    static boolean iswin(int n) {
+        int[][] w = {
+            {0, 1, 2}, {0, 3, 6}, {0, 4, 8}, {1, 4, 7},
+            {2, 5, 8}, {2, 4, 6}, {3, 4, 5}, {6, 7, 8}
+        };
+        for (int[] line : w) {
+            int prod = board[line[0]] * board[line[1]] * board[line[2]];
+            if ((n == 3 && prod == 27) || (n == 5 && prod == 125))
+                return true;
+        }
+        return false;
+    }
+
+    public static void main(String[] args) {
+        initBoard();
+        int x, p, m;
+
+        System.out.print("Enter position for X (0-8): ");
+        x = sc.nextInt();
+        go(x);
+        display();
+
+        m = make2();
+        go(m);
+        display();
+
+        System.out.print("Enter position for X (0-8): ");
+        x = sc.nextInt();
+        go(x);
+        display();
+
+        p = poswin(3);
+        if (p != -1)
+            go(p);
+        else
+            go(make2());
+        display();
+
+        System.out.print("Enter position for X (0-8): ");
+        x = sc.nextInt();
+        go(x);
+        display();
+
+        if (iswin(3)) {
+            System.out.println("You WIN!!!");
+            return;
+        }
+
+        p = poswin(5);
+        if (p != -1)
+            go(p);
+        else if (poswin(3) != -1)
+            go(poswin(3));
+        else
+            go(make2());
+        display();
+
+        if (iswin(5)) {
+            System.out.println("I WIN!!!");
+            return;
+        }
+
+        System.out.print("Enter position for X (0-8): ");
+        x = sc.nextInt();
+        go(x);
+        display();
+
+        if (iswin(3)) {
+            System.out.println("You WIN!!!");
+            return;
+        }
+
+        p = poswin(5);
+        if (p != -1)
+            go(p);
+        else if (poswin(3) != -1)
+            go(poswin(3));
+        else
+            go(make2());
+        display();
+
+        if (iswin(5)) {
+            System.out.println("I WIN!!!");
+            return;
+        }
+
+        System.out.print("Enter position for X (0-8): ");
+        x = sc.nextInt();
+        go(x);
+        display();
+
+        if (iswin(3)) {
+            System.out.println("You WIN!!!");
+            return;
+        }
+
+        System.out.println("DRAW!!!");
+    }
+}
+
+
+Tic TAc TOe AI
+
+import java.util.*;
+
+public class TicTacToeAI {
+    static final char HUMAN = 'X';
+    static final char AI = 'O';
+    static final char EMPTY = ' ';
+
+    static void displayBoard(char[] board) {
+        System.out.println();
+        for (int i = 0; i < 9; i++) {
+            System.out.print((board[i] == EMPTY ? (char) ('0' + i) : board[i]) + " ");
+            if ((i + 1) % 3 == 0) System.out.println();
+        }
+        System.out.println();
+    }
+
+    static char checkWinner(char[] board) {
+        int[][] winLines = {
+            {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, // rows
+            {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, // cols
+            {0, 4, 8}, {2, 4, 6}              // diagonals
+        };
+
+        for (int[] line : winLines) {
+            if (board[line[0]] != EMPTY &&
+                board[line[0]] == board[line[1]] &&
+                board[line[1]] == board[line[2]]) {
+                return board[line[0]];
+            }
+        }
+
+        for (char c : board) {
+            if (c == EMPTY) return EMPTY;
+        }
+        return 'D'; 
+    }
+
+    static int minimax(char[] board, boolean isAI) {
+        char winner = checkWinner(board);
+        if (winner == AI) return 10;
+        if (winner == HUMAN) return -10;
+        if (winner == 'D') return 0;
+
+        if (isAI) {
+            int best = Integer.MIN_VALUE;
+            for (int i = 0; i < 9; i++) {
+                if (board[i] == EMPTY) {
+                    board[i] = AI;
+                    best = Math.max(best, minimax(board, false));
+                    board[i] = EMPTY;
+                }
+            }
+            return best;
+        } else {
+            int best = Integer.MAX_VALUE;
+            for (int i = 0; i < 9; i++) {
+                if (board[i] == EMPTY) {
+                    board[i] = HUMAN;
+                    best = Math.min(best, minimax(board, true));
+                    board[i] = EMPTY;
+                }
+            }
+            return best;
+        }
+    }
+
+    static int findBestMove(char[] board) {
+        int bestVal = Integer.MIN_VALUE;
+        int bestMove = -1;
+
+        for (int i = 0; i < 9; i++) {
+            if (board[i] == EMPTY) {
+                board[i] = AI;
+                int moveVal = minimax(board, false);
+                board[i] = EMPTY;
+
+                if (moveVal > bestVal) {
+                    bestMove = i;
+                    bestVal = moveVal;
+                }
+            }
+        }
+        return bestMove;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        char[] board = new char[9];
+        Arrays.fill(board, EMPTY);
+
+        System.out.println("Tic Tac Toe using Minimax AI");
+        System.out.println("You are X, AI is O");
+        displayBoard(board);
+
+        while (true) {
+            // Human move
+            System.out.print("Enter your move (0-8): ");
+            int move = sc.nextInt();
+
+            if (move < 0 || move >= 9 || board[move] != EMPTY) {
+                System.out.println("Invalid move, try again.");
+                continue;
+            }
+
+            board[move] = HUMAN;
+            displayBoard(board);
+
+            if (checkWinner(board) == HUMAN) {
+                System.out.println("You WIN!!!");
+                break;
+            }
+            if (checkWinner(board) == 'D') {
+                System.out.println("It's a DRAW!");
+                break;
+            }
+
+            // AI move
+            int aiMove = findBestMove(board);
+            board[aiMove] = AI;
+            System.out.println("AI chooses position " + aiMove);
+            displayBoard(board);
+
+            if (checkWinner(board) == AI) {
+                System.out.println("AI WINS!!!");
+                break;
+            }
+            if (checkWinner(board) == 'D') {
+                System.out.println("It's a DRAW!");
+                break;
+            }
+        }
+        sc.close();
+    }
+}
+
+
+
+
+
+
 
    PS01_TicTacToe.java (stand-alone, robust, input-checked)
 import java.util.*;
